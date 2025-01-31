@@ -13,6 +13,7 @@ class ParticleSystem {
     );
     this.renderer = new THREE.WebGLRenderer({ antialias: true });
     this.renderer.setSize(window.innerWidth, window.innerHeight);
+    this.renderer.setClearColor(0xffffff);
     document.body.appendChild(this.renderer.domElement);
 
     // Create a group to hold all particles

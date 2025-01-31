@@ -19,24 +19,27 @@ class ParticleSystem {
     this.particles = [];
     this.particlesCount = 100;
 
-    // Define colors
+    // Define new neon colors
     this.colors = [
-      0xff0000, // red
-      0x00ff00, // green
-      0x000000, // black
-      0xffff00, // yellow
+      0x00ffff, // neon blue
+      0x39ff14, // neon green
+      0xff6b00, // neon orange
+      0xff69b4, // neon pink
     ];
 
     // Create spherical particles
     for (let i = 0; i < this.particlesCount; i++) {
+      // Get random color from the neon colors array
       const color = this.colors[Math.floor(Math.random() * this.colors.length)];
-      const size = Math.random() * 2 + 0.5; // Random size between 0.5 and 2.5
+      const size = Math.random() * 2 + 0.5;
 
       const geometry = new THREE.SphereGeometry(size, 32, 32);
       const material = new THREE.MeshPhongMaterial({
         color: color,
-        shininess: 100,
-        specular: 0x444444,
+        shininess: 150, // Increased shininess for more neon effect
+        specular: 0x666666, // Adjusted specular for better glow
+        emissive: color, // Make the color emit light
+        emissiveIntensity: 0.5, // Control the strength of the emission
       });
 
       const mesh = new THREE.Mesh(geometry, material);
@@ -57,11 +60,11 @@ class ParticleSystem {
       this.scene.add(mesh);
     }
 
-    // Add lighting
-    const ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
+    // Adjust lighting for neon effect
+    const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
     this.scene.add(ambientLight);
 
-    const directionalLight = new THREE.DirectionalLight(0xffffff, 1);
+    const directionalLight = new THREE.DirectionalLight(0xffffff, 1.2);
     directionalLight.position.set(1, 1, 1);
     this.scene.add(directionalLight);
 

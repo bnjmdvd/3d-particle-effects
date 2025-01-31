@@ -15,11 +15,15 @@ class ParticleSystem {
     this.renderer.setSize(window.innerWidth, window.innerHeight);
     document.body.appendChild(this.renderer.domElement);
 
-    // Create particles array
-    this.particles = [];
-    this.particlesCount = 100;
+    // Create a group to hold all particles
+    this.particleGroup = new THREE.Group();
+    this.scene.add(this.particleGroup);
 
-    // Define new neon colors
+    // Particle tracking
+    this.particles = [];
+    this.maxParticles = 15;
+
+    // Define neon colors
     this.colors = [
       0x00ffff, // neon blue
       0x39ff14, // neon green
@@ -27,40 +31,7 @@ class ParticleSystem {
       0xff69b4, // neon pink
     ];
 
-    // Create spherical particles
-    for (let i = 0; i < this.particlesCount; i++) {
-      // Get random color from the neon colors array
-      const color = this.colors[Math.floor(Math.random() * this.colors.length)];
-      const size = Math.random() * 2 + 0.5;
-
-      const geometry = new THREE.SphereGeometry(size, 32, 32);
-      const material = new THREE.MeshPhongMaterial({
-        color: color,
-        shininess: 150, // Increased shininess for more neon effect
-        specular: 0x666666, // Adjusted specular for better glow
-        emissive: color, // Make the color emit light
-        emissiveIntensity: 0.5, // Control the strength of the emission
-      });
-
-      const mesh = new THREE.Mesh(geometry, material);
-
-      // Random position
-      mesh.position.x = (Math.random() - 0.5) * 50;
-      mesh.position.y = (Math.random() - 0.5) * 50;
-      mesh.position.z = (Math.random() - 0.5) * 50;
-
-      // Random velocity
-      mesh.velocity = {
-        x: (Math.random() - 0.5) * 0.2,
-        y: (Math.random() - 0.5) * 0.2,
-        z: (Math.random() - 0.5) * 0.2,
-      };
-
-      this.particles.push(mesh);
-      this.scene.add(mesh);
-    }
-
-    // Adjust lighting for neon effect
+    // Add lighting
     const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
     this.scene.add(ambientLight);
 
@@ -71,6 +42,12 @@ class ParticleSystem {
     // Position camera
     this.camera.position.z = 50;
 
+    // Create initial center particle
+    this.createCenterParticle();
+
+    // Start the particle generation process
+    this.scheduleNextParticle();
+
     // Start animation
     this.animate();
 
@@ -78,20 +55,72 @@ class ParticleSystem {
     window.addEventListener("resize", this.onWindowResize.bind(this));
   }
 
+  createCenterParticle() {
+    const geometry = new THREE.SphereGeometry(3.0, 32, 32);
+    const material = new THREE.MeshPhongMaterial({
+      color: this.getRandomColor(),
+      shininess: 150,
+      specular: 0x666666,
+      emissive: this.getRandomColor(),
+      emissiveIntensity: 0.5,
+    });
+
+    const centerParticle = new THREE.Mesh(geometry, material);
+    centerParticle.position.set(0, 0, 0);
+    this.particles.push(centerParticle);
+    this.particleGroup.add(centerParticle);
+  }
+
+  createAttachedParticle() {
+    if (this.particles.length >= this.maxParticles) return;
+
+    const size = Math.random() * 2 + 1.5; // Random size between 1.5 and 3.5
+    const geometry = new THREE.SphereGeometry(size, 32, 32);
+    const color = this.getRandomColor();
+    const material = new THREE.MeshPhongMaterial({
+      color: color,
+      shininess: 150,
+      specular: 0x666666,
+      emissive: color,
+      emissiveIntensity: 0.5,
+    });
+
+    const particle = new THREE.Mesh(geometry, material);
+
+    // Generate random spherical coordinates
+    const phi = Math.random() * Math.PI * 2; // Random angle around Y axis
+    const theta = Math.random() * Math.PI; // Random angle from Y axis
+    const radius = 5; // Distance from center
+
+    // Convert spherical coordinates to Cartesian
+    particle.position.x = radius * Math.sin(theta) * Math.cos(phi);
+    particle.position.y = radius * Math.sin(theta) * Math.sin(phi);
+    particle.position.z = radius * Math.cos(theta);
+
+    this.particles.push(particle);
+    this.particleGroup.add(particle);
+
+    // Schedule next particle if we haven't reached the maximum
+    if (this.particles.length < this.maxParticles) {
+      this.scheduleNextParticle();
+    }
+  }
+
+  scheduleNextParticle() {
+    const delay = Math.random() * 5000 + 1000; // Random delay between 1-6 seconds (1000-6000 milliseconds)
+    setTimeout(() => this.createAttachedParticle(), delay);
+  }
+
+  getRandomColor() {
+    return this.colors[Math.floor(Math.random() * this.colors.length)];
+  }
+
   animate() {
     requestAnimationFrame(this.animate.bind(this));
 
-    // Update particle positions
-    this.particles.forEach((particle) => {
-      particle.position.x += particle.velocity.x;
-      particle.position.y += particle.velocity.y;
-      particle.position.z += particle.velocity.z;
-
-      // Wrap around if particles go too far
-      if (Math.abs(particle.position.x) > 25) particle.position.x *= -0.9;
-      if (Math.abs(particle.position.y) > 25) particle.position.y *= -0.9;
-      if (Math.abs(particle.position.z) > 25) particle.position.z *= -0.9;
-    });
+    // Rotate the entire particle group
+    this.particleGroup.rotation.x += 0.005;
+    this.particleGroup.rotation.y += 0.005;
 
     this.renderer.render(this.scene, this.camera);
   }

@@ -11,56 +11,62 @@ class ParticleSystem {
       0.1,
       1000
     );
-    this.renderer = new THREE.WebGLRenderer();
+    this.renderer = new THREE.WebGLRenderer({ antialias: true });
     this.renderer.setSize(window.innerWidth, window.innerHeight);
     document.body.appendChild(this.renderer.domElement);
 
-    // Create particles
-    this.particlesGeometry = new THREE.BufferGeometry();
-    this.particlesCount = 1000;
+    // Create particles array
+    this.particles = [];
+    this.particlesCount = 100;
 
-    // Create arrays for particle positions and velocities
-    this.positions = new Float32Array(this.particlesCount * 3);
-    this.velocities = [];
+    // Define colors
+    this.colors = [
+      0xff0000, // red
+      0x00ff00, // green
+      0x000000, // black
+      0xffff00, // yellow
+    ];
 
-    // Initialize particles with random positions and velocities
-    for (let i = 0; i < this.particlesCount * 3; i += 3) {
-      // Random positions within -50 to 50 range
-      this.positions[i] = (Math.random() - 0.5) * 100;
-      this.positions[i + 1] = (Math.random() - 0.5) * 100;
-      this.positions[i + 2] = (Math.random() - 0.5) * 100;
+    // Create spherical particles
+    for (let i = 0; i < this.particlesCount; i++) {
+      const color = this.colors[Math.floor(Math.random() * this.colors.length)];
+      const size = Math.random() * 2 + 0.5; // Random size between 0.5 and 2.5
 
-      // Random velocities
-      this.velocities.push({
+      const geometry = new THREE.SphereGeometry(size, 32, 32);
+      const material = new THREE.MeshPhongMaterial({
+        color: color,
+        shininess: 100,
+        specular: 0x444444,
+      });
+
+      const mesh = new THREE.Mesh(geometry, material);
+
+      // Random position
+      mesh.position.x = (Math.random() - 0.5) * 50;
+      mesh.position.y = (Math.random() - 0.5) * 50;
+      mesh.position.z = (Math.random() - 0.5) * 50;
+
+      // Random velocity
+      mesh.velocity = {
         x: (Math.random() - 0.5) * 0.2,
         y: (Math.random() - 0.5) * 0.2,
         z: (Math.random() - 0.5) * 0.2,
-      });
+      };
+
+      this.particles.push(mesh);
+      this.scene.add(mesh);
     }
 
-    // Add positions to geometry
-    this.particlesGeometry.setAttribute(
-      "position",
-      new THREE.BufferAttribute(this.positions, 3)
-    );
+    // Add lighting
+    const ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
+    this.scene.add(ambientLight);
 
-    // Create particle material
-    this.particlesMaterial = new THREE.PointsMaterial({
-      color: 0xffffff,
-      size: 0.5,
-      transparent: true,
-      opacity: 0.8,
-    });
-
-    // Create particle system
-    this.particles = new THREE.Points(
-      this.particlesGeometry,
-      this.particlesMaterial
-    );
-    this.scene.add(this.particles);
+    const directionalLight = new THREE.DirectionalLight(0xffffff, 1);
+    directionalLight.position.set(1, 1, 1);
+    this.scene.add(directionalLight);
 
     // Position camera
-    this.camera.position.z = 100;
+    this.camera.position.z = 50;
 
     // Start animation
     this.animate();
@@ -73,23 +79,16 @@ class ParticleSystem {
     requestAnimationFrame(this.animate.bind(this));
 
     // Update particle positions
-    for (let i = 0; i < this.particlesCount * 3; i += 3) {
-      this.positions[i] += this.velocities[i / 3].x;
-      this.positions[i + 1] += this.velocities[i / 3].y;
-      this.positions[i + 2] += this.velocities[i / 3].z;
+    this.particles.forEach((particle) => {
+      particle.position.x += particle.velocity.x;
+      particle.position.y += particle.velocity.y;
+      particle.position.z += particle.velocity.z;
 
-      // Wrap particles around if they go too far
-      if (Math.abs(this.positions[i]) > 50) this.positions[i] *= -0.9;
-      if (Math.abs(this.positions[i + 1]) > 50) this.positions[i + 1] *= -0.9;
-      if (Math.abs(this.positions[i + 2]) > 50) this.positions[i + 2] *= -0.9;
-    }
-
-    // Update geometry
-    this.particlesGeometry.attributes.position.needsUpdate = true;
-
-    // Rotate particle system
-    this.particles.rotation.x += 0.001;
-    this.particles.rotation.y += 0.001;
+      // Wrap around if particles go too far
+      if (Math.abs(particle.position.x) > 25) particle.position.x *= -0.9;
+      if (Math.abs(particle.position.y) > 25) particle.position.y *= -0.9;
+      if (Math.abs(particle.position.z) > 25) particle.position.z *= -0.9;
+    });
 
     this.renderer.render(this.scene, this.camera);
   }

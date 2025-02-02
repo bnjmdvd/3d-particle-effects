@@ -24,13 +24,14 @@ class ParticleSystem {
     this.particles = [];
     this.maxParticles = 15;
 
-    // Define neon colors
+    // Define particle colors
     this.colors = [
-      0x00ffff, // neon blue
-      0x39ff14, // neon green
-      0xff6b00, // neon orange
-      0xff69b4, // neon pink
+      0x3ACAFF, // playtomo blue
+      0x23E920, // playtomo green
+      0xF83B13, // playtomo red
+      0xFFDD08, // playtomo yellow
     ];
+    this.lastUsedColor = null; // Add this to track the last used color
 
     // Add lighting
     const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
@@ -113,7 +114,13 @@ class ParticleSystem {
   }
 
   getRandomColor() {
-    return this.colors[Math.floor(Math.random() * this.colors.length)];
+    // Filter out the last used color
+    const availableColors = this.colors.filter(color => color !== this.lastUsedColor);
+    
+    // Get a random color from available colors
+    const color = availableColors[Math.floor(Math.random() * availableColors.length)];
+    this.lastUsedColor = color;
+    return color;
   }
 
   animate() {
